@@ -1,0 +1,74 @@
+---
+title: "SMILE Café - Achats"
+output: pdf_document
+classoption: a4paper
+date: 2017-11-23
+---
+
+```{r}
+# Load data
+dataCoffee <- read.csv(file = "2017-11-23_Cafe_SMILE.csv", stringsAsFactors = FALSE)
+```
+
+Here are the data used for the graph:
+
+```{r}
+# Just change name to fit on one line
+colnames(dataCoffee)[4] <- "TxPresence"
+colnames(dataCoffee)[6] <- "Cafe"
+```
+
+```{r}
+dataCoffee
+```
+
+```{r}
+# And revert back to old name
+colnames(dataCoffee)[4] <- "TauxPresenceConsoPeriode1"
+colnames(dataCoffee)[6] <- "CafeAchete1"
+```
+
+```{r}
+# Put today's date in end date for calculations
+dataCoffee[is.na(dataCoffee$DateSortie),"DateSortie"] <- "2017-11-23"
+```
+
+Compute the time spend in the team, scaled by proportion of the week spent at SMILE:
+```{r}
+# Compute duration in days
+DurationDays <- as.numeric(as.Date(dataCoffee$DateSortie) - as.Date(dataCoffee$DateEntree))
+dataCoffee <- cbind(dataCoffee, 
+                    Duration1 = DurationDays)
+
+# Scale by Presence&Consumption
+dataCoffee <- cbind(dataCoffee, 
+                    ScaledDuration1 = dataCoffee$TauxPresenceConsoPeriode1*DurationDays)
+```
+
+Scale the amount of coffee bought by this scaled time:
+```{r}
+# Scale Coffee: Bought coffee divided by scaled duration
+dataCoffee <- cbind(dataCoffee, 
+                    ScaledCoffee = dataCoffee$CafeAchete1 / dataCoffee$ScaledDuration1)
+
+# Put Marguerite at 0
+dataCoffee[is.nan(dataCoffee$ScaledCoffee), "ScaledCoffee"] <- 0
+```
+
+Sort the data by the Scaled amount of coffee that was bought
+```{r}
+sortindex <- sort(dataCoffee$ScaledCoffee, index.return = TRUE, decreasing = TRUE)
+subData <- dataCoffee[sortindex$ix, c("Nom", "ScaledCoffee")]
+```
+
+Plot the result, as a bar graph, and the average amount as horizontal line:
+```{r}
+par(las = 1, mar=c(7.5, 3, 2.2, 0.2), lend = 1)
+plot(subData$ScaledCoffee*365, type = "h", lwd = 4, frame.plot = FALSE, axes = FALSE, 
+     xlab = "", ylab = "Café / temps", ylim = c(0, max(subData$ScaledCoffee*365)))
+abline(h = mean(dataCoffee$ScaledCoffee*365, na.rm = TRUE), lty = 2)
+axis(1, at = seq_along(subData$Nom), labels = subData$Nom, las = 2, pos = 0)
+axis(2)
+title("Scaled Amount of Coffee Bought")
+mtext( "\n(2016-11-23 -- 2017-11-23)", 3, line = -0.5)
+```

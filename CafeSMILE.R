@@ -20,3 +20,13 @@ dataCoffee[is.nan(dataCoffee$ScaledCoffee), "ScaledCoffee"] <- 0
 sortindex <- sort(dataCoffee$ScaledCoffee, index.return = TRUE, decreasing = TRUE)
 subData <- dataCoffee[sortindex$ix, c("Nom", "ScaledCoffee")]
 subData
+
+pdf("SmileCoffee.pdf", width = 8, height = 6)
+par(las = 1, mar=c(7, 3, 0.2, 0.2), lend = 1)
+plot(subData$ScaledCoffee*365, type = "h", lwd = 4, frame.plot = FALSE, axes = FALSE, 
+     xlab = "", ylab = "Café / temps", ylim = c(0, max(subData$ScaledCoffee*365)))
+abline(h = mean(dataCoffee$ScaledCoffee*365, na.rm = TRUE), lty = 2)
+axis(1, at = seq_along(subData$Nom), labels = subData$Nom, las = 2, pos = 0)
+axis(2)
+dev.off()
+system("xdg-open SmileCoffee.pdf")
